@@ -1,0 +1,72 @@
+import java.util.HashSet;
+
+public class Set<T> {
+    private HashSet<T> set;
+
+    public Set() {
+        set = new HashSet<>();
+    }
+
+    // Добавление элемента в множество
+    public void add(T element) {
+        set.add(element);
+    }
+
+    // Удаление элемента из множества
+    public void remove(T element) {
+        set.remove(element);
+    }
+
+    // Проверка наличия элемента в множестве
+    public boolean contains(T element) {
+        return set.contains(element);
+    }
+
+    // Получение размера множества
+    public int size() {
+        return set.size();
+    }
+
+    // Проверка, является ли множество пустым
+    public boolean isEmpty() {
+        return set.isEmpty();
+    }
+
+    // Очистка множества (удаление всех элементов)
+    public void clear() {
+        set.clear();
+    }
+
+    // Получение всех элементов множества в виде массива
+    public T[] toArray() {
+        @SuppressWarnings("unchecked")
+        T[] array = (T[]) new Object[set.size()];
+        return set.toArray(array);
+    }
+
+    // Печать всех элементов множества
+    public void printElements() {
+        for (T element : set) {
+            System.out.println(element);
+        }
+    }
+
+    public static void main(String[] args) {
+        Set<Integer> set = new Set<>();
+
+        set.add(1);
+        set.add(2);
+        set.add(3);
+        set.add(4);
+
+        System.out.println("Множество содержит элемент 2? " + set.contains(2)); // Вывод: true
+        System.out.println("Размер множества: " + set.size()); // Вывод: 4
+
+        set.remove(3);
+
+        System.out.println("Множество содержит элемент 3? " + set.contains(3)); // Вывод: false
+        System.out.println("Размер множества: " + set.size()); // Вывод: 3
+
+        set.printElements();
+    }
+}
