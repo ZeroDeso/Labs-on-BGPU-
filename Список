@@ -1,0 +1,85 @@
+// Определение класса узла дерева
+class TreeNode {
+    int value;
+    TreeNode left;
+    TreeNode right;
+
+    // Конструктор для создания узла с заданным значением
+    TreeNode(int value) {
+        this.value = value;
+        this.left = null;
+        this.right = null;
+    }
+}
+
+// Определение класса для бинарного дерева
+class BinaryTree {
+    private TreeNode root; // Корень дерева
+
+    // Конструктор для создания пустого дерева
+    BinaryTree() {
+        root = null;
+    }
+
+    // Метод для добавления значения в дерево
+    public void insert(int value) {
+        root = insertRecursive(root, value);
+    }
+
+    // Рекурсивная вспомогательная функция для вставки значения в дерево
+    private TreeNode insertRecursive(TreeNode current, int value) {
+        if (current == null) {
+            return new TreeNode(value); // Создаем новый узел, если текущий узел пуст
+        }
+
+        // Рекурсивно перемещаемся по дереву влево или вправо, в зависимости от значения
+        if (value < current.value) {
+            current.left = insertRecursive(current.left, value);
+        } else if (value > current.value) {
+            current.right = insertRecursive(current.right, value);
+        }
+
+        return current;
+    }
+
+    // Метод для поиска значения в дереве
+    public boolean search(int value) {
+        return searchRecursive(root, value);
+    }
+
+    // Рекурсивная вспомогательная функция для поиска значения в дереве
+    private boolean searchRecursive(TreeNode current, int value) {
+        if (current == null) {
+            return false; // Достигнут конец дерева, значение не найдено
+        }
+
+        if (value == current.value) {
+            return true; // Значение найдено в текущем узле
+        }
+
+        // Рекурсивно ищем значение в левом или правом поддереве
+        if (value < current.value) {
+            return searchRecursive(current.left, value);
+        } else {
+            return searchRecursive(current.right, value);
+        }
+    }
+}
+
+// Пример использования класса BinaryTree
+public class Main {
+    public static void main(String[] args) {
+        BinaryTree tree = new BinaryTree();
+
+        // Вставка значений в дерево
+        tree.insert(10);
+        tree.insert(5);
+        tree.insert(15);
+        tree.insert(2);
+        tree.insert(7);
+
+        // Поиск значений в дереве
+        System.out.println(tree.search(7)); // Выводит true
+        System.out.println(tree.search(20)); // Выводит false
+    }
+}
