@@ -1,0 +1,135 @@
+//Перцептрон для функции "И" 
+import java.util.Arrays;
+
+public class Perceptron {
+    private double[] weights;
+    private double bias;
+    private double learningRate;
+
+    public Perceptron(int inputSize, double learningRate) {
+        this.weights = new double[inputSize];
+        this.bias = 0;
+        this.learningRate = learningRate;
+    }
+
+    public int predict(int[] inputs) {
+        double sum = bias;
+        for (int i = 0; i < weights.length; i++) {
+            sum += weights[i] * inputs[i];
+        }
+        return (sum > 0) ? 1 : 0;
+    }
+
+    public void train(int[][] trainingInputs, int[] labels, int epochs) {
+        for (int epoch = 0; epoch < epochs; epoch++) {
+            for (int i = 0; i < trainingInputs.length; i++) {
+                int prediction = predict(trainingInputs[i]);
+                int error = labels[i] - prediction;
+
+                for (int j = 0; j < weights.length; j++) {
+                    weights[j] += learningRate * error * trainingInputs[i][j];
+                }
+                bias += learningRate * error;
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        // Пример для функции "И" (AND)
+        int[][] trainingInputs = { {0, 0}, {0, 1}, {1, 0}, {1, 1} };
+        int[] labels = { 0, 0, 0, 1 }; // Ожидаемый результат функции AND
+
+        Perceptron perceptron = new Perceptron(2, 0.1);
+        perceptron.train(trainingInputs, labels, 10);
+
+        System.out.println("Тест функции 'И' (AND):");
+        for (int[] inputs : trainingInputs) {
+            System.out.println(Arrays.toString(inputs) + " => " + perceptron.predict(inputs));
+        }
+    }
+}
+
+
+/Обучение для функции "ИЛИ" (OR)
+
+Вот пример реализации однослойного перцептрона на Java, который будет обучаться для реализации базовых логических функций "И" (AND), "ИЛИ" (OR), и "НЕ" (NOT). Мы используем стандартный алгоритм обучения перцептрона.
+
+Перцептрон для функции "И" (AND)
+java
+Копировать код
+import java.util.Arrays;
+
+public class Perceptron {
+    private double[] weights;
+    private double bias;
+    private double learningRate;
+
+    public Perceptron(int inputSize, double learningRate) {
+        this.weights = new double[inputSize];
+        this.bias = 0;
+        this.learningRate = learningRate;
+    }
+
+    public int predict(int[] inputs) {
+        double sum = bias;
+        for (int i = 0; i < weights.length; i++) {
+            sum += weights[i] * inputs[i];
+        }
+        return (sum > 0) ? 1 : 0;
+    }
+
+    public void train(int[][] trainingInputs, int[] labels, int epochs) {
+        for (int epoch = 0; epoch < epochs; epoch++) {
+            for (int i = 0; i < trainingInputs.length; i++) {
+                int prediction = predict(trainingInputs[i]);
+                int error = labels[i] - prediction;
+
+                for (int j = 0; j < weights.length; j++) {
+                    weights[j] += learningRate * error * trainingInputs[i][j];
+                }
+                bias += learningRate * error;
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        // Пример для функции "И" (AND)
+        int[][] trainingInputs = { {0, 0}, {0, 1}, {1, 0}, {1, 1} };
+        int[] labels = { 0, 0, 0, 1 }; // Ожидаемый результат функции AND
+
+        Perceptron perceptron = new Perceptron(2, 0.1);
+        perceptron.train(trainingInputs, labels, 10);
+
+        System.out.println("Тест функции 'И' (AND):");
+        for (int[] inputs : trainingInputs) {
+            System.out.println(Arrays.toString(inputs) + " => " + perceptron.predict(inputs));
+        }
+    }
+}
+//Обучение для функции "ИЛИ" 
+//Чтобы обучить перцептрон логической функции "ИЛИ", измените массив labels в методе main на следующий:
+
+int[] labels = { 0, 1, 1, 1 }; // Ожидаемый результат функции OR
+
+//Обучение для функции "НЕ" Для реализации функции "НЕ" перцептрону нужен только один вход.
+
+public static void main(String[] args) {
+    // Пример для функции "НЕ" (NOT)
+    int[][] trainingInputs = { {0}, {1} };
+    int[] labels = { 1, 0 }; // Ожидаемый результат функции NOT
+
+    Perceptron perceptron = new Perceptron(1, 0.1);
+    perceptron.train(trainingInputs, labels, 10);
+
+    System.out.println("Тест функции 'НЕ' (NOT):");
+    for (int[] inputs : trainingInputs) {
+        System.out.println(Arrays.toString(inputs) + " => " + perceptron.predict(inputs));
+    }
+}
+
+//weights — веса для входных сигналов.
+//bias — смещение (порог).
+//learningRate — скорость обучения, контролирует, насколько сильно изменяются веса при ошибке.
+//train() — метод обучения, обновляет веса на основе ошибки.
+//predict() — метод предсказания, возвращает 1 или 0 в зависимости от входных данных.
+//Таким образом, с небольшими изменениями перцептрон можно обучить для работы с логическими функциями "И", "ИЛИ" и "НЕ".
