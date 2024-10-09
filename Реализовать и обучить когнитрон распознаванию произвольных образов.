@@ -1,0 +1,134 @@
+//Основные этапы реализации когнитрона
+//Структура когнитрона: Состоит из чередующихся слоев S-слоев (сумматорных) и C-слоев (конкурентных).
+//S-слой: Вычисляет линейные комбинации входов.
+//C-слой: Отвечает за подавление активности соседних нейронов, оставляя только самый активный нейрон.
+//Обучение: Использует механизм самонастраиваемых весов и конкуренцию между нейронами.
+
+import java.util.Random;
+
+public class Cognitron {
+    private int inputSize;           // Размер входного слоя
+    private int numLayers;           // Количество слоев в сети
+    private int[] layerSizes;        // Размеры каждого слоя
+    private double[][][] weights;    // Веса сети
+    private double[][] activations;  // Активации нейронов в слоях
+
+    // Конструктор для инициализации когнитрона
+    public Cognitron(int inputSize, int[] layerSizes) {
+        this.inputSize = inputSize;
+        this.numLayers = layerSizes.length;
+        this.layerSizes = layerSizes;
+        this.weights = new double[numLayers][][];
+        this.activations = new double[numLayers][];
+
+        initializeWeights();
+    }
+
+    // Метод для инициализации весов случайными значениями
+    private void initializeWeights() {
+        Random rand = new Random();
+        int prevLayerSize = inputSize;
+
+        for (int i = 0; i < numLayers; i++) {
+            weights[i] = new double[layerSizes[i]][prevLayerSize];
+            activations[i] = new double[layerSizes[i]];
+            for (int j = 0; j < layerSizes[i]; j++) {
+                for (int k = 0; k < prevLayerSize; k++) {
+                    weights[i][j][k] = rand.nextDouble() - 0.5;
+                }
+            }
+            prevLayerSize = layerSizes[i];
+        }
+    }
+
+    // Прямое распространение данных через когнитрон
+    public double[] forwardPass(double[] input) {
+        double[] currentInput = input;
+
+        for (int layer = 0; layer < numLayers; layer++) {
+            for (int neuron = 0; neuron < layerSizes[layer]; neuron++) {
+                double sum = 0;
+                for (int prevNeuron = 0; prevNeuron < currentInput.length; prevNeuron++) {
+                    sum += currentInput[prevNeuron] * weights[layer][neuron][prevNeuron];
+                }
+                activations[layer][neuron] = sigmoid(sum);
+            }
+            currentInput = activations[layer];
+        }
+
+        return currentInput;
+    }
+
+    // Функция активации сигмоида
+    private double sigmoid(double x) {
+        return 1 / (1 + Math.exp(-x));
+    }
+
+    // Обучение когнитрона методом конкурентного обучения
+    public void train(double[][] trainingData, int epochs) {
+        for (int epoch = 0; epoch < epochs; epoch++) {
+            for (double[] input : trainingData) {
+                forwardPass(input);
+                adjustWeights(input);
+            }
+        }
+    }
+
+    // Метод для корректировки весов на основе конкурентного обучения
+    private void adjustWeights(double[] input) {
+        double[] currentInput = input;
+
+        for (int layer = 0; layer < numLayers; layer++) {
+            int winningNeuron = getWinningNeuron(layer);
+            for (int prevNeuron = 0; prevNeuron < currentInput.length; prevNeuron++) {
+                weights[layer][winningNeuron][prevNeuron] += 0.1 * (currentInput[prevNeuron] - weights[layer][winningNeuron][prevNeuron]);
+            }
+            currentInput = activations[layer];
+        }
+    }
+
+    // Метод для определения "победившего" нейрона (нейрона с наибольшей активацией)
+    private int getWinningNeuron(int layer) {
+        int winningNeuron = 0;
+        double maxActivation = Double.NEGATIVE_INFINITY;
+
+        for (int neuron = 0; neuron < layerSizes[layer]; neuron++) {
+            if (activations[layer][neuron] > maxActivation) {
+                maxActivation = activations[layer][neuron];
+                winningNeuron = neuron;
+            }
+        }
+
+        return winningNeuron;
+    }
+
+    // Тестирование когнитрона
+    public static void main(String[] args) {
+        int inputSize = 100; // Входной размер (например, 10x10 пикселей)
+        int[] layerSizes = {64, 32, 10}; // Размеры слоев когнитрона
+
+        Cognitron cognitron = new Cognitron(inputSize, layerSizes);
+
+        // Пример данных обучения (представление произвольных образов)
+        double[][] trainingData = {
+            { /* Массивы данных для обучения когнитрона */ }
+        };
+
+        cognitron.train(trainingData, 1000);
+
+        // Пример тестирования на новом образе
+        double[] testInput = { /* Новый образ для распознавания */ };
+        double[] result = cognitron.forwardPass(testInput);
+
+        System.out.println("Результат распознавания: " + Arrays.toString(result));
+    }
+}
+
+//Объяснение кода
+//Инициализация весов: Веса инициализируются случайными значениями, чтобы сеть могла обучаться.
+//Прямое распространение: Используется для передачи данных через сеть и вычисления активации нейронов.
+//Конкурентное обучение: Веса корректируются на основе обучения, при этом только "победивший" нейрон (с наибольшей активацией) обновляет свои веса.
+//Слои: Сеть состоит из нескольких слоев, которые выполняют распознавание, проходя от простого к сложному.
+//Обучение и распознавание
+//Обучение: Используется конкурентное обучение, при котором только активный нейрон корректирует свои веса.
+//Распознавание: После завершения обучения сеть когнитрон способна распознавать новые образы, основываясь на ранее изученных паттернах.
