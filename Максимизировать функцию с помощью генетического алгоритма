@@ -1,0 +1,133 @@
+import java.util.Arrays;
+import java.util.Random;
+
+public class GeneticAlgorithm {
+    private static final Random rand = new Random();
+
+    // Класс, представляющий особь с координатами x и y
+    static class Individual {
+        double x;
+        double y;
+        double fitness;
+
+        // Конструктор для создания особи с случайными значениями x и y
+        public Individual() {
+            this.x = rand.nextDouble() * 10 - 5; // x в диапазоне [-5, 5]
+            this.y = rand.nextDouble() * 10 - 5; // y в диапазоне [-5, 5]
+            this.fitness = calculateFitness();
+        }
+
+        // Метод для вычисления фитнеса
+        public double calculateFitness() {
+            return 1 / (1 + x * x + y * y);
+        }
+    }
+
+    // Метод для отбора методом элит
+    private static Individual[] elitismSelection(Individual[] population, int eliteCount) {
+        Arrays.sort(population, (a, b) -> Double.compare(b.fitness, a.fitness));
+        return Arrays.copyOfRange(population, 0, eliteCount);
+    }
+
+    // Метод для отбора методом рулетки
+    private static Individual rouletteSelection(Individual[] population) {
+        double totalFitness = Arrays.stream(population).mapToDouble(ind -> ind.fitness).sum();
+        double randomValue = rand.nextDouble() * totalFitness;
+        double cumulativeFitness = 0;
+        for (Individual individual : population) {
+            cumulativeFitness += individual.fitness;
+            if (cumulativeFitness >= randomValue) {
+                return individual;
+            }
+        }
+        return population[population.length - 1]; // На случай, если что-то пошло не так
+    }
+
+    // Метод для выполнения кроссовера между двумя особями
+    private static Individual crossover(Individual parent1, Individual parent2) {
+        Individual child = new Individual();
+        child.x = (parent1.x + parent2.x) / 2; // Среднее значение x
+        child.y = (parent1.y + parent2.y) / 2; // Среднее значение y
+        return child;
+    }
+
+    // Метод для выполнения мутации
+    private static void mutate(Individual individual, double mutationRate) {
+        if (rand.nextDouble() < mutationRate) {
+            individual.x += rand.nextGaussian() * 0.1;
+            individual.y += rand.nextGaussian() * 0.1;
+            individual.fitness = individual.calculateFitness();
+        }
+    }
+
+    // Генетический алгоритм с выбором метода отбора
+    public static Individual runGeneticAlgorithm(int populationSize, int generations, double mutationRate, boolean useElitism) {
+        Individual[] population = new Individual[populationSize];
+
+        // Инициализация начальной популяции
+        for (int i = 0; i < populationSize; i++) {
+            population[i] = new Individual();
+        }
+
+        for (int generation = 0; generation < generations; generation++) {
+            Individual[] newPopulation = new Individual[populationSize];
+
+            // Отбор особей (либо методом элит, либо методом рулетки)
+            if (useElitism) {
+                Individual[] elite = elitismSelection(population, populationSize / 2);
+                System.arraycopy(elite, 0, newPopulation, 0, elite.length);
+                for (int i = elite.length; i < populationSize; i++) {
+                    Individual parent1 = elite[rand.nextInt(elite.length)];
+                    Individual parent2 = elite[rand.nextInt(elite.length)];
+                    newPopulation[i] = crossover(parent1, parent2);
+                }
+            } else {
+                for (int i = 0; i < populationSize; i++) {
+                    Individual parent1 = rouletteSelection(population);
+                    Individual parent2 = rouletteSelection(population);
+                    newPopulation[i] = crossover(parent1, parent2);
+                }
+            }
+
+            // Мутация нового поколения
+            for (Individual individual : newPopulation) {
+                mutate(individual, mutationRate);
+            }
+
+            population = newPopulation;
+
+            // Вывод лучшего результата в текущем поколении
+            Individual best = Arrays.stream(population).max((a, b) -> Double.compare(a.fitness, b.fitness)).orElse(null);
+            System.out.println("Поколение " + generation + ": Лучший фитнес = " + best.fitness + ", x = " + best.x + ", y = " + best.y);
+        }
+
+        // Возвращаем лучшую особь из финальной популяции
+        return Arrays.stream(population).max((a, b) -> Double.compare(a.fitness, b.fitness)).orElse(null);
+    }
+
+    // Основной метод для запуска алгоритма
+    public static void main(String[] args) {
+        int populationSize = 100;
+        int generations = 1000;
+        double mutationRate = 0.05;
+
+        System.out.println("Запуск генетического алгоритма с отбором методом элит:");
+        Individual bestElitism = runGeneticAlgorithm(populationSize, generations, mutationRate, true);
+
+        System.out.println("\nЗапуск генетического алгоритма с отбором методом рулетки:");
+        Individual bestRoulette = runGeneticAlgorithm(populationSize, generations, mutationRate, false);
+
+        System.out.println("\nСравнение результатов:");
+        System.out.println("Метод элит: Лучший фитнес = " + bestElitism.fitness + ", x = " + bestElitism.x + ", y = " + bestElitism.y);
+        System.out.println("Метод рулетки: Лучший фитнес = " + bestRoulette.fitness + ", x = " + bestRoulette.x + ", y = " + bestRoulette.y);
+    }
+}
+
+//Объяснение кода
+//Метод элит сохраняет лучшие особи и использует их для создания нового поколения.
+//Метод рулетки выбирает особей для скрещивания пропорционально их фитнесу.
+//Кроссовер объединяет две особи, создавая новое потомство.
+//Мутация добавляет случайные изменения для поддержания генетического разнообразия.
+//Сравнение производительности
+//Метод элит: Быстрее находит оптимальные решения, так как сохраняет лучшие особи и направляет поиск.
+//Метод рулетки: Учитывает все особи, но может быть медленнее, так как худшие особи могут участвовать в создании нового поколения.
