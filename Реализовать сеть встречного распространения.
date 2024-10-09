@@ -1,0 +1,159 @@
+//Реализация сети встречного распространения (Counterpropagation Network, CPN) включает в себя два основных компонента:
+//Слой самоорганизующихся карт (СОМ) Кохонена — выполняет кластеризацию и организацию входных данных.
+//Слой Гроссберга — выполняет классификацию и управляемое обучение для сопоставления кластеров с правильными метками.
+//После реализации сети встречного распространения мы сравним её производительность с однослойным перцептроном для задачи распознавания арабских цифр.
+
+//Архитектура сети встречного распространения
+//Слой Кохонена (неуправляемое обучение) используется для кластеризации входных данных.
+//Слой Гроссберга (управляемое обучение) используется для классификации и ассоциации кластеров со специфическими выходными метками.
+
+import java.util.Random;
+
+public class KohonenLayer {
+    private int numNeurons;          // Количество нейронов в слое Кохонена
+    private int inputSize;           // Размерность входного вектора
+    private double[][] weights;      // Веса нейронов слоя Кохонена
+    private double learningRate = 0.5; // Скорость обучения
+
+    // Конструктор для инициализации слоя Кохонена
+    public KohonenLayer(int numNeurons, int inputSize) {
+        this.numNeurons = numNeurons;
+        this.inputSize = inputSize;
+        this.weights = new double[numNeurons][inputSize];
+        initializeWeights();
+    }
+
+    // Метод для инициализации весов случайными значениями
+    private void initializeWeights() {
+        Random rand = new Random();
+        for (int i = 0; i < numNeurons; i++) {
+            for (int j = 0; j < inputSize; j++) {
+                weights[i][j] = rand.nextDouble();
+            }
+        }
+    }
+
+    // Метод для поиска победителя (нейрона с наименьшим расстоянием до входа)
+    public int getWinnerNeuron(double[] input) {
+        int winner = 0;
+        double minDistance = Double.MAX_VALUE;
+        for (int i = 0; i < numNeurons; i++) {
+            double distance = 0;
+            for (int j = 0; j < inputSize; j++) {
+                distance += Math.pow(input[j] - weights[i][j], 2);
+            }
+            if (distance < minDistance) {
+                minDistance = distance;
+                winner = i;
+            }
+        }
+        return winner;
+    }
+
+    // Метод для обновления весов победившего нейрона
+    public void updateWeights(int winnerIndex, double[] input) {
+        for (int i = 0; i < inputSize; i++) {
+            weights[winnerIndex][i] += learningRate * (input[i] - weights[winnerIndex][i]);
+        }
+    }
+}
+
+//Реализация слоя Гроссберга
+
+public class GrossbergLayer {
+    private int numNeurons;         // Количество нейронов в слое Гроссберга
+    private int inputSize;          // Размерность входного вектора
+    private double[][] weights;     // Веса нейронов слоя Гроссберга
+    private double learningRate = 0.5; // Скорость обучения
+
+    // Конструктор для инициализации слоя Гроссберга
+    public GrossbergLayer(int numNeurons, int inputSize) {
+        this.numNeurons = numNeurons;
+        this.inputSize = inputSize;
+        this.weights = new double[numNeurons][inputSize];
+        initializeWeights();
+    }
+
+    // Метод для инициализации весов случайными значениями
+    private void initializeWeights() {
+        Random rand = new Random();
+        for (int i = 0; i < numNeurons; i++) {
+            for (int j = 0; j < inputSize; j++) {
+                weights[i][j] = rand.nextDouble();
+            }
+        }
+    }
+
+    // Метод для обновления весов с управляемым обучением
+    public void train(int classIndex, double[] input) {
+        for (int i = 0; i < inputSize; i++) {
+            weights[classIndex][i] += learningRate * (input[i] - weights[classIndex][i]);
+        }
+    }
+
+    // Метод классификации входного образа
+    public int classify(double[] input) {
+        int bestMatch = 0;
+        double maxActivation = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < numNeurons; i++) {
+            double activation = 0;
+            for (int j = 0; j < inputSize; j++) {
+                activation += weights[i][j] * input[j];
+            }
+            if (activation > maxActivation) {
+                maxActivation = activation;
+                bestMatch = i;
+            }
+        }
+        return bestMatch;
+    }
+}
+
+
+//3. Комбинированная реализация сети встречного распространения
+
+public class CounterPropagationNetwork {
+    private KohonenLayer kohonenLayer;
+    private GrossbergLayer grossbergLayer;
+
+    public CounterPropagationNetwork(int kohonenNeurons, int inputSize, int outputSize) {
+        kohonenLayer = new KohonenLayer(kohonenNeurons, inputSize);
+        grossbergLayer = new GrossbergLayer(outputSize, kohonenNeurons);
+    }
+
+    // Обучение сети Кохонена и Гроссберга
+    public void train(double[][] trainingData, int[] labels) {
+        for (int epoch = 0; epoch < 1000; epoch++) { // Количество эпох обучения
+            for (int i = 0; i < trainingData.length; i++) {
+                int winnerNeuron = kohonenLayer.getWinnerNeuron(trainingData[i]);
+                kohonenLayer.updateWeights(winnerNeuron, trainingData[i]);
+                grossbergLayer.train(labels[i], kohonenLayer.weights[winnerNeuron]);
+            }
+        }
+    }
+
+    // Классификация данных с помощью сети встречного распространения
+    public int classify(double[] input) {
+        int winnerNeuron = kohonenLayer.getWinnerNeuron(input);
+        return grossbergLayer.classify(kohonenLayer.weights[winnerNeuron]);
+    }
+
+    public static void main(String[] args) {
+        // Пример данных обучения для распознавания цифр
+        double[][] trainingData = { /* Массивы данных для каждой цифры */ };
+        int[] labels = { /* Метки для каждой цифры от 0 до 9 */ };
+
+        CounterPropagationNetwork cpn = new CounterPropagationNetwork(10, 100, 10);
+        cpn.train(trainingData, labels);
+
+        // Классификация нового образа
+        double[] newInput = { /* Новый образ цифры */ };
+        int result = cpn.classify(newInput);
+        System.out.println("Распознанная цифра: " + result);
+    }
+}
+
+//Сравнение с однослойным перцептроном
+//Однослойный перцептрон может решать только линейно разделимые задачи. Для задачи распознавания цифр, особенно когда образы повреждены или изменены, его производительность будет ниже.
+//Сеть встречного распространения способна лучше обрабатывать задачи нелинейной классификации за счет использования слоя Кохонена, который обучается неуправляемым образом и создает хорошую кластеризацию данных, передавая результаты в слой Гроссберга для окончательной классификации.
+
