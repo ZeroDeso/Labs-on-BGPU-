@@ -1,0 +1,121 @@
+//Этапы:
+//Инициализация: Создание начальной популяции особей, каждая из которых представляет набор весов перцептрона.
+//Оценка: Вычисление фитнес-функции для каждой особи, отражающей её качество (точность) на обучающих данных.
+//Отбор: Выбор лучших особей для создания следующего поколения.
+//Кроссовер: Комбинирование весов двух родительских особей для создания нового потомства.
+//Мутация: Небольшое случайное изменение весов, чтобы добавить разнообразие в популяцию.
+
+import java.util.Arrays;
+import java.util.Random;
+
+public class GeneticPerceptron {
+    private double[] weights; // Веса перцептрона
+    private double bias;      // Смещение
+    private Random rand = new Random();
+
+    // Конструктор для инициализации весов перцептрона
+    public GeneticPerceptron(int inputSize) {
+        this.weights = new double[inputSize];
+        this.bias = rand.nextDouble();
+        initializeWeights();
+    }
+
+    // Метод для случайной инициализации весов
+    private void initializeWeights() {
+        for (int i = 0; i < weights.length; i++) {
+            weights[i] = rand.nextDouble() * 2 - 1; // Инициализация весов в диапазоне [-1, 1]
+        }
+    }
+
+    // Метод для предсказания на основе текущих весов
+    public int predict(int[] inputs) {
+        double sum = bias;
+        for (int i = 0; i < weights.length; i++) {
+            sum += weights[i] * inputs[i];
+        }
+        return (sum > 0) ? 1 : 0;
+    }
+
+    // Фитнес-функция для оценки качества решения
+    public double calculateFitness(int[][] trainingInputs, int[] labels) {
+        int correctCount = 0;
+        for (int i = 0; i < trainingInputs.length; i++) {
+            if (predict(trainingInputs[i]) == labels[i]) {
+                correctCount++;
+            }
+        }
+        return (double) correctCount / trainingInputs.length; // Доля правильных предсказаний
+    }
+
+    // Метод для создания новой особи на основе двух родителей (кроссовер)
+    public GeneticPerceptron crossover(GeneticPerceptron partner) {
+        GeneticPerceptron child = new GeneticPerceptron(weights.length);
+        for (int i = 0; i < weights.length; i++) {
+            child.weights[i] = (rand.nextBoolean()) ? this.weights[i] : partner.weights[i]; // Выбор генов случайным образом
+        }
+        child.bias = (rand.nextBoolean()) ? this.bias : partner.bias;
+        return child;
+    }
+
+    // Метод для мутации весов с небольшим шансом
+    public void mutate(double mutationRate) {
+        for (int i = 0; i < weights.length; i++) {
+            if (rand.nextDouble() < mutationRate) {
+                weights[i] += rand.nextGaussian() * 0.1; // Небольшое случайное изменение веса
+            }
+        }
+        if (rand.nextDouble() < mutationRate) {
+            bias += rand.nextGaussian() * 0.1;
+        }
+    }
+
+    // Генетический алгоритм для обучения перцептрона
+    public static GeneticPerceptron train(int[][] trainingInputs, int[] labels, int populationSize, int generations, double mutationRate) {
+        GeneticPerceptron[] population = new GeneticPerceptron[populationSize];
+        Random rand = new Random();
+
+        // Инициализация популяции
+        for (int i = 0; i < populationSize; i++) {
+            population[i] = new GeneticPerceptron(trainingInputs[0].length);
+        }
+
+        for (int generation = 0; generation < generations; generation++) {
+            // Сортировка популяции по фитнесу (качество решения)
+            Arrays.sort(population, (a, b) -> Double.compare(b.calculateFitness(trainingInputs, labels), a.calculateFitness(trainingInputs, labels)));
+
+            // Сохранение лучших особей и создание нового поколения
+            for (int i = populationSize / 2; i < populationSize; i++) {
+                GeneticPerceptron parent1 = population[rand.nextInt(populationSize / 2)];
+                GeneticPerceptron parent2 = population[rand.nextInt(populationSize / 2)];
+                population[i] = parent1.crossover(parent2);
+                population[i].mutate(mutationRate);
+            }
+
+            // Печать прогресса обучения
+            System.out.println("Generation " + generation + ": Best fitness = " + population[0].calculateFitness(trainingInputs, labels));
+        }
+
+        return population[0]; // Возвращаем лучшую особь из финальной популяции
+    }
+
+    // Тестирование генетического алгоритма на обучении перцептрона
+    public static void main(String[] args) {
+        int[][] trainingInputs = { {0, 0}, {0, 1}, {1, 0}, {1, 1} };
+        int[] labels = { 0, 0, 0, 1 }; // Обучающие данные для функции "И" (AND)
+
+        GeneticPerceptron bestPerceptron = train(trainingInputs, labels, 100, 1000, 0.01);
+
+        // Тестирование лучшего перцептрона
+        System.out.println("Тестирование обученного перцептрона:");
+        for (int[] inputs : trainingInputs) {
+            System.out.println(Arrays.toString(inputs) + " => " + bestPerceptron.predict(inputs));
+        }
+    }
+}
+
+//Объяснение кода
+//Инициализация: Создаем начальную популяцию, состоящую из случайных весов.
+//Оценка: Используем функцию calculateFitness() для оценки точности каждого перцептрона.
+//Кроссовер: Создаем новое потомство путем смешивания генов двух родительских особей.
+//Мутация: Вносим небольшие изменения в потомство для поддержания генетического разнообразия.
+//Эволюция: Повторяем процесс кроссовера и мутации на протяжении нескольких поколений для улучшения популяции.
