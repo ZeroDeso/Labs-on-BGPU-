@@ -1,0 +1,83 @@
+import java.util.Arrays;
+
+public class DigitPerceptron {
+    private double[][] weights;  // Матрица весов для 10 выходов
+    private double[] biases;     // Смещения для каждого из 10 выходов
+    private double learningRate; // Скорость обучения
+
+    // Конструктор для инициализации весов и смещений
+    public DigitPerceptron(int inputSize, int outputSize, double learningRate) {
+        weights = new double[outputSize][inputSize]; // Инициализация весов
+        biases = new double[outputSize];             // Инициализация смещений
+        this.learningRate = learningRate;            // Установка скорости обучения
+    }
+
+    // Метод для предсказания цифры на основе входных данных
+    public int predict(int[] inputs) {
+        double[] outputs = new double[weights.length];
+        for (int i = 0; i < weights.length; i++) {
+            outputs[i] = biases[i];
+            for (int j = 0; j < inputs.length; j++) {
+                outputs[i] += weights[i][j] * inputs[j];
+            }
+        }
+        // Возвращаем индекс с максимальным значением активации, который представляет цифру
+        return argMax(outputs);
+    }
+
+    // Вспомогательный метод для нахождения индекса с максимальным значением
+    private int argMax(double[] array) {
+        int maxIndex = 0;
+        for (int i = 1; i < array.length; i++) {
+            if (array[i] > array[maxIndex]) {
+                maxIndex = i;
+            }
+        }
+        return maxIndex;
+    }
+
+    // Метод для обучения перцептрона на основе обучающих данных
+    public void train(int[][] trainingInputs, int[] labels, int epochs) {
+        for (int epoch = 0; epoch < epochs; epoch++) {
+            for (int i = 0; i < trainingInputs.length; i++) {
+                int prediction = predict(trainingInputs[i]);
+                int actualLabel = labels[i];
+
+                // Обновление весов и смещений на основе ошибки
+                if (prediction != actualLabel) {
+                    for (int j = 0; j < weights[actualLabel].length; j++) {
+                        weights[actualLabel][j] += learningRate * trainingInputs[i][j]; // Увеличиваем веса правильного класса
+                        weights[prediction][j] -= learningRate * trainingInputs[i][j];  // Уменьшаем веса неправильного класса
+                    }
+                    biases[actualLabel] += learningRate;
+                    biases[prediction] -= learningRate;
+                }
+            }
+        }
+    }
+
+    // Главный метод для тестирования перцептрона
+    public static void main(String[] args) {
+        // Пример обучающих данных для цифр (используйте реальные изображения в формате 10x10 пикселей)
+        int[][] trainingInputs = {
+            /* Представление цифр 0-9 в виде одномерных массивов из 100 элементов */
+        };
+        int[] labels = {
+            /* Метки для каждого из входных данных (от 0 до 9) */
+        };
+
+        DigitPerceptron perceptron = new DigitPerceptron(100, 10, 0.1);
+        perceptron.train(trainingInputs, labels, 1000); // Обучение перцептрона
+
+        // Пример предсказания для одной цифры
+        int[] testDigit = {
+            /* Одномерный массив, представляющий цифру */
+        };
+        int prediction = perceptron.predict(testDigit);
+        System.out.println("Распознанная цифра: " + prediction);
+    }
+}
+//Веса и смещения: Инициализация матрицы весов для 10 выходных нейронов и смещений.
+//Метод предсказания: Возвращает номер выходного нейрона с максимальной активацией.
+//Метод обучения: Модифицирует веса и смещения в зависимости от ошибок предсказания.
+//Тестирование: Предсказывает цифру на основе входного массива из 100 значений.
