@@ -1,0 +1,218 @@
+//Подход к реализации
+//Модель биоценоза:
+
+//Растения: ресурсы, которые могут быть съедены травоядными.
+//Травоядные: едят растения для выживания и воспроизводства.
+//Хищники: едят травоядных для поддержания своей жизнеспособности.
+//Контроллеры активности:
+//Используем однослойные перцептроны в качестве контроллеров, которые управляют действиями агентов (например, движение, поиск пищи).
+//Метаболизм:
+//Включает в себя потребление ресурсов и энергию, необходимую для существования агентов.
+//Агенты должны умирать при недостатке энергии и воспроизводиться при избытке.
+//Графический интерфейс:
+//Реализовать с помощью Java Swing или JavaFX для визуализации среды и перемещения агентов.
+
+//Структура реализации
+//Реализация будет состоять из нескольких компонентов:
+
+//Агенты: классы для растений, травоядных и хищников.
+//Перцептрон: контроллер для управления действиями агентов.
+//Метаболизм: механизм регулирования уровня энергии у агентов.
+//GUI: интерфейс для отображения симуляции.
+
+//1. Перцептрон
+
+import java.util.Random;
+
+public class Perceptron {
+    private double[] weights;
+    private double bias;
+    private Random rand = new Random();
+
+    // Конструктор для инициализации перцептрона
+    public Perceptron(int inputSize) {
+        this.weights = new double[inputSize];
+        this.bias = rand.nextDouble();
+        initializeWeights();
+    }
+
+    // Инициализация весов случайными значениями
+    private void initializeWeights() {
+        for (int i = 0; i < weights.length; i++) {
+            weights[i] = rand.nextDouble() * 2 - 1; // значения в диапазоне [-1, 1]
+        }
+    }
+
+    // Прямое распространение для принятия решений
+    public int decide(double[] inputs) {
+        double sum = bias;
+        for (int i = 0; i < weights.length; i++) {
+            sum += weights[i] * inputs[i];
+        }
+        return (sum > 0) ? 1 : 0; // возвращаем 1 (активное действие) или 0 (пассивное)
+    }
+}
+
+
+//2. Классы агентов (Растения, Травоядные, Хищники)
+
+public abstract class Agent {
+    protected int x, y; // Положение агента
+    protected double energy; // Уровень энергии агента
+    protected Perceptron perceptron; // Перцептрон для управления агентом
+
+    // Метод перемещения агента
+    public abstract void move();
+
+    // Метод обработки метаболизма
+    public abstract void metabolize();
+
+    // Метод взаимодействия с другими агентами
+    public abstract void interact(Agent other);
+}
+
+class Plant extends Agent {
+    public Plant(int x, int y) {
+        this.x = x;
+        this.y = y;
+        this.energy = 100; // Начальная энергия растений
+    }
+
+    @Override
+    public void move() {
+        // Растения не перемещаются
+    }
+
+    @Override
+    public void metabolize() {
+        // Растения пассивно восстанавливают энергию
+        energy = Math.min(energy + 1, 100);
+    }
+
+    @Override
+    public void interact(Agent other) {
+        // Растения не взаимодействуют
+    }
+}
+
+class Herbivore extends Agent {
+    public Herbivore(int x, int y) {
+        this.x = x;
+        this.y = y;
+        this.energy = 50; // Начальная энергия травоядных
+        this.perceptron = new Perceptron(2); // Перцептрон с двумя входами
+    }
+
+    @Override
+    public void move() {
+        // Пример принятия решения на основе энергии
+        double[] inputs = {energy, Math.random()};
+        if (perceptron.decide(inputs) == 1) {
+            x += Math.random() > 0.5 ? 1 : -1;
+            y += Math.random() > 0.5 ? 1 : -1;
+        }
+    }
+
+    @Override
+    public void metabolize() {
+        energy -= 0.1; // Энергия уменьшается с каждым ходом
+        if (energy <= 0) {
+            energy = 0; // Агент умирает
+        }
+    }
+
+    @Override
+    public void interact(Agent other) {
+        if (other instanceof Plant && energy < 100) {
+            energy += 10; // Поедание растения восстанавливает энергию
+            other.energy = 0; // Растение съедено
+        }
+    }
+}
+
+class Predator extends Agent {
+    public Predator(int x, int y) {
+        this.x = x;
+        this.y = y;
+        this.energy = 80; // Начальная энергия хищников
+        this.perceptron = new Perceptron(2);
+    }
+
+    @Override
+    public void move() {
+        double[] inputs = {energy, Math.random()};
+        if (perceptron.decide(inputs) == 1) {
+            x += Math.random() > 0.5 ? 1 : -1;
+            y += Math.random() > 0.5 ? 1 : -1;
+        }
+    }
+
+    @Override
+    public void metabolize() {
+        energy -= 0.2; // Хищники тратят больше энергии
+        if (energy <= 0) {
+            energy = 0; // Агент умирает
+        }
+    }
+
+    @Override
+    public void interact(Agent other) {
+        if (other instanceof Herbivore && energy < 100) {
+            energy += 20; // Поедание травоядного восстанавливает энергию
+            other.energy = 0; // Травоядное съедено
+        }
+    }
+}
+
+
+//Графический интерфейс (GUI)
+//Для визуализации модели биоценоза можно использовать JavaFX или Java Swing. Вот пример создания окна и рисования агентов:
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class BioCenosisSimulation extends JPanel {
+    private List<Agent> agents = new ArrayList<>();
+
+    public BioCenosisSimulation() {
+        // Добавляем агентов
+        agents.add(new Plant(50, 50));
+        agents.add(new Herbivore(100, 100));
+        agents.add(new Predator(150, 150));
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        for (Agent agent : agents) {
+            if (agent instanceof Plant) {
+                g.setColor(Color.GREEN);
+                g.fillRect(agent.x, agent.y, 10, 10);
+            } else if (agent instanceof Herbivore) {
+                g.setColor(Color.BLUE);
+                g.fillRect(agent.x, agent.y, 10, 10);
+            } else if (agent instanceof Predator) {
+                g.setColor(Color.RED);
+                g.fillRect(agent.x, agent.y, 10, 10);
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Модель биоценоза");
+        BioCenosisSimulation simulation = new BioCenosisSimulation();
+        frame.add(simulation);
+        frame.setSize(800, 600);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+
+        // Обновляем состояние симуляции каждые 100 мс
+        new Timer(100, e -> {
+            simulation.repaint();
+        }).start();
+    }
+}
+
+
