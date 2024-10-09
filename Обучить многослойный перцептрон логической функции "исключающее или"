@@ -1,0 +1,127 @@
+//Объяснение задачи
+//Функция XOR не может быть решена с помощью однослойного перцептрона, так как она не является линейно разделимой. Поэтому необходим многослойный перцептрон с как минимум одним скрытым слоем.
+//Архитектура многослойного перцептрона
+//Cоздадим MLP с тремя слоями:
+//Входной слой: 2 нейрона (входы x1 и x2).
+//Скрытый слой: 2 нейрона (с нелинейной функцией активации).
+//Выходной слой: 1 нейрон (выход функции XOR).
+//будем использовать функцию активации Sigmoid для скрытого и выходного слоев, а метод обратного распространения ошибки для обучения.
+
+
+import java.util.Random;
+
+public class MLP_XOR {
+    private double[][] hiddenWeights; // Веса между входным и скрытым слоями
+    private double[] outputWeights;   // Веса между скрытым и выходным слоями
+    private double[] hiddenLayer;     // Значения нейронов скрытого слоя
+    private double output;            // Значение выходного нейрона
+    private double learningRate;      // Скорость обучения
+
+    public MLP_XOR(int inputSize, int hiddenSize, double learningRate) {
+        this.hiddenWeights = new double[hiddenSize][inputSize + 1]; // Включаем смещение (bias)
+        this.outputWeights = new double[hiddenSize + 1]; // Включаем смещение (bias)
+        this.hiddenLayer = new double[hiddenSize];
+        this.learningRate = learningRate;
+        initializeWeights();
+    }
+
+    // Метод для инициализации весов случайными значениями
+    private void initializeWeights() {
+        Random rand = new Random();
+        for (int i = 0; i < hiddenWeights.length; i++) {
+            for (int j = 0; j < hiddenWeights[i].length; j++) {
+                hiddenWeights[i][j] = rand.nextDouble() - 0.5;
+            }
+        }
+        for (int i = 0; i < outputWeights.length; i++) {
+            outputWeights[i] = rand.nextDouble() - 0.5;
+        }
+    }
+
+    // Функция активации сигмоида
+    private double sigmoid(double x) {
+        return 1 / (1 + Math.exp(-x));
+    }
+
+    // Производная функции сигмоида
+    private double sigmoidDerivative(double x) {
+        return x * (1 - x);
+    }
+
+    // Метод для прямого распространения данных
+    private double forwardPass(int[] inputs) {
+        // Расчет значений скрытого слоя
+        for (int i = 0; i < hiddenLayer.length; i++) {
+            double sum = hiddenWeights[i][0]; // смещение (bias)
+            for (int j = 0; j < inputs.length; j++) {
+                sum += hiddenWeights[i][j + 1] * inputs[j];
+            }
+            hiddenLayer[i] = sigmoid(sum);
+        }
+
+        // Расчет значения выходного слоя
+        double sum = outputWeights[0]; // смещение (bias)
+        for (int i = 0; i < hiddenLayer.length; i++) {
+            sum += outputWeights[i + 1] * hiddenLayer[i];
+        }
+        output = sigmoid(sum);
+        return output;
+    }
+
+    // Метод обратного распространения ошибки для обновления весов
+    private void backpropagation(int[] inputs, double target) {
+        double outputError = target - output;
+        double outputDelta = outputError * sigmoidDerivative(output);
+
+        // Обновление весов выходного слоя
+        for (int i = 0; i < hiddenLayer.length; i++) {
+            outputWeights[i + 1] += learningRate * outputDelta * hiddenLayer[i];
+        }
+        outputWeights[0] += learningRate * outputDelta; // Обновление смещения (bias) выходного слоя
+
+        // Обновление весов скрытого слоя
+        for (int i = 0; i < hiddenLayer.length; i++) {
+            double hiddenError = outputDelta * outputWeights[i + 1];
+            double hiddenDelta = hiddenError * sigmoidDerivative(hiddenLayer[i]);
+            for (int j = 0; j < inputs.length; j++) {
+                hiddenWeights[i][j + 1] += learningRate * hiddenDelta * inputs[j];
+            }
+            hiddenWeights[i][0] += learningRate * hiddenDelta; // Обновление смещения (bias) скрытого слоя
+        }
+    }
+
+    // Метод обучения многослойного перцептрона
+    public void train(int[][] trainingInputs, int[] labels, int epochs) {
+        for (int epoch = 0; epoch < epochs; epoch++) {
+            for (int i = 0; i < trainingInputs.length; i++) {
+                forwardPass(trainingInputs[i]);
+                backpropagation(trainingInputs[i], labels[i]);
+            }
+        }
+    }
+
+    // Метод для тестирования перцептрона
+    public static void main(String[] args) {
+        int[][] trainingInputs = { {0, 0}, {0, 1}, {1, 0}, {1, 1} };
+        int[] labels = { 0, 1, 1, 0 }; // Ожидаемые результаты для XOR
+
+        MLP_XOR mlp = new MLP_XOR(2, 2, 0.5);
+        mlp.train(trainingInputs, labels, 10000);
+
+        // Тестирование модели
+        System.out.println("Тестирование функции XOR:");
+        for (int[] inputs : trainingInputs) {
+            double output = mlp.forwardPass(inputs);
+            System.out.println("Входы: " + inputs[0] + ", " + inputs[1] + " => Выход: " + Math.round(output));
+        }
+    }
+}
+
+//Архитектура сети: Используется один скрытый слой с двумя нейронами и выходной слой с одним нейроном.
+//Прямое распространение: Метод forwardPass вычисляет выходные значения сети.
+//Обратное распространение: Метод backpropagation обновляет веса сети на основе ошибки.
+//Функция активации: Используется sigmoid для нелинейности.
+//Тестирование: Печатаются результаты предсказания для всех комбинаций входов XOR.
+//Результаты
+//Сеть обучается на наборе данных для функции XOR, и после завершения обучения должна правильно классифицировать все комбинации входных значений.
+//Проверка на других логических функциях
